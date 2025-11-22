@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight } from 'lucide-react';
@@ -10,14 +9,11 @@ interface WelcomeScreenProps {
 export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnter }) => {
   return (
     <div className="fixed inset-0 z-[200] bg-[#f5f5f5] flex flex-col items-center justify-center text-gray-800 overflow-hidden">
-      {/* Background - Light, airy */}
-      <div className="absolute inset-0 z-0">
-        <img 
-          src="https://picsum.photos/1920/1080?random=white_architecture" 
-          alt="Background" 
-          className="w-full h-full object-cover opacity-50 blur-sm scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/70 to-[#f5f5f5]" />
+      {/* Background - CSS Gradient (无网络依赖) */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-br from-white via-gray-100 to-gray-200" />
+      
+      <div className="absolute inset-0 z-0 opacity-30">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-pink-100/50 via-transparent to-transparent" />
       </div>
 
       {/* Content - Dark text on light background */}

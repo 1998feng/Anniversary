@@ -15,6 +15,7 @@ import { JoystickOutput } from './types';
 import { useGameStore } from './store';
 import { Eye, User, Shirt } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import * as THREE from 'three';
 
 const Scene: React.FC<{ 
   joystickRef: React.MutableRefObject<JoystickOutput>,
@@ -53,7 +54,16 @@ const Scene: React.FC<{
         <Gallery />
       </Physics>
       
-      <Environment preset="city" environmentIntensity={0.6} />
+      {/* 
+         修复：移除 preset="city" (依赖 raw.githack.com，国内无法访问)。
+         使用本地生成的白色球体作为环境贴图，提供反射源，无需下载外部 HDR 文件。
+      */}
+      <Environment resolution={256}>
+        <mesh scale={100}>
+            <sphereGeometry args={[1, 64, 64]} />
+            <meshBasicMaterial color="#ffffff" side={THREE.BackSide} />
+        </mesh>
+      </Environment>
     </>
   );
 };
