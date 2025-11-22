@@ -43,7 +43,11 @@ const Scene: React.FC<{
         <orthographicCamera attach="shadow-camera" args={[-30, 30, 30, -30, 1, 60]} />
       </directionalLight>
 
-      <Physics gravity={[0, -9.81, 0]}>
+      {/* 
+         设置 timeStep="vary" 是解决移动端（如 120Hz 屏幕）角色抖动的关键。
+         这会让物理引擎根据实际帧率步进，而不是强制 60Hz。
+      */}
+      <Physics gravity={[0, -9.81, 0]} timeStep="vary">
         <Player 
           joystickData={joystickRef} 
           cameraRotation={cameraRotationRef} 
@@ -55,7 +59,6 @@ const Scene: React.FC<{
       </Physics>
       
       {/* 
-         修复：移除 preset="city" (依赖 raw.githack.com，国内无法访问)。
          使用本地生成的白色球体作为环境贴图，提供反射源，无需下载外部 HDR 文件。
       */}
       <Environment resolution={256}>

@@ -7,17 +7,19 @@ interface JumpButtonProps {
 
 export const JumpButton: React.FC<JumpButtonProps> = ({ onJump }) => {
   const handlePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault(); // iOS 修复
     e.stopPropagation();
     onJump();
   };
 
   const handleEvent = (e: React.PointerEvent) => {
+    e.preventDefault(); // iOS 修复
     e.stopPropagation();
   };
 
   return (
     <div 
-      className="absolute bottom-12 right-10 z-50 w-20 h-20 flex items-center justify-center touch-none"
+      className="absolute bottom-12 right-10 z-50 w-20 h-20 flex items-center justify-center touch-none select-none"
       onPointerDown={handlePointerDown}
       onPointerMove={handleEvent}
       onPointerUp={handleEvent}

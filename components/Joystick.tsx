@@ -16,7 +16,10 @@ export const Joystick: React.FC<JoystickProps> = ({ onMove }) => {
   const MAX_RADIUS = 50; 
 
   const handlePointerDown = (e: React.PointerEvent) => {
+    // iOS 修复：必须阻止默认行为，否则拖拽会触发页面滚动或文本选择
+    e.preventDefault();
     e.stopPropagation(); // Critical: Prevent App.tsx from detecting this as a camera drag
+    
     e.currentTarget.setPointerCapture(e.pointerId);
     pointerIdRef.current = e.pointerId;
     
@@ -26,7 +29,9 @@ export const Joystick: React.FC<JoystickProps> = ({ onMove }) => {
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
+    e.preventDefault(); // iOS 修复
     e.stopPropagation();
+    
     if (!origin || e.pointerId !== pointerIdRef.current) return;
 
     const dx = e.clientX - origin.x;
@@ -47,8 +52,19 @@ export const Joystick: React.FC<JoystickProps> = ({ onMove }) => {
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
+    e.preventDefault(); // iOS 修复
     e.stopPropagation();
+    
     if (e.pointerId === pointerIdRef.current) {
+      // 尝试释放捕获
+      try {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+      } catch (err) {
+        // 忽略可能的错误
+      }
+
       setOrigin(null);
       setJoystickActive(false);
       setPosition({ x: 0, y: 0 });
@@ -59,7 +75,7 @@ export const Joystick: React.FC<JoystickProps> = ({ onMove }) => {
 
   return (
     <div 
-      className="absolute bottom-10 left-10 z-50 w-40 h-40 flex items-center justify-center touch-none"
+      className="absolute bottom-10 left-10 z-50 w-40 h-40 flex items-center justify-center touch-none select-none"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

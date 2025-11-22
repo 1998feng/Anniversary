@@ -21,8 +21,9 @@ export const PhotoFrame: React.FC<PhotoFrameProps> = ({ data }) => {
   // 宽度根据图片原始比例自动缩放
   const { width, height } = useMemo(() => {
     const FIXED_HEIGHT = 3.5;
-    if (texture && texture.image) {
-      const ratio = texture.image.width / texture.image.height;
+    const img = texture?.image as HTMLImageElement; // 类型断言修复 TS 错误
+    if (img && img.width && img.height) {
+      const ratio = img.width / img.height;
       return { width: FIXED_HEIGHT * ratio, height: FIXED_HEIGHT };
     }
     return { width: 3, height: 4 }; // 默认值（防抖动）
