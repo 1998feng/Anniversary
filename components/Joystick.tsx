@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { useGameStore } from '../store';
 
 interface JoystickProps {
@@ -7,35 +7,26 @@ interface JoystickProps {
 
 export const Joystick: React.FC<JoystickProps> = ({ onMove }) => {
   const stickRef = useRef<HTMLDivElement>(null);
+  const baseRef = useRef<HTMLDivElement>(null);
   const setJoystickActive = useGameStore((state) => state.setJoystickActive);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
+  
+  // 使用 Ref 存储核心数据，避免在全局监听器中出现 stale closure 问题
+  const origin = useRef<{ x: number; y: number } | null>(null);
   const pointerIdRef = useRef<number | null>(null);
+  const onMoveRef = useRef(onMove);
+  onMoveRef.current = onMove;
 
   // Visual constants
   const MAX_RADIUS = 50; 
 
-  const handlePointerDown = (e: React.PointerEvent) => {
-    // iOS 修复：必须阻止默认行为，否则拖拽会触发页面滚动或文本选择
+  const handleGlobalPointerMove = useCallback((e: PointerEvent) => {
+    // 确保我们只处理我们关心的那个触摸点
+    if (e.pointerId !== pointerIdRef.current || !origin.current || !stickRef.current) return;
+    
     e.preventDefault();
-    e.stopPropagation(); // Critical: Prevent App.tsx from detecting this as a camera drag
-    
-    e.currentTarget.setPointerCapture(e.pointerId);
-    pointerIdRef.current = e.pointerId;
-    
-    setOrigin({ x: e.clientX, y: e.clientY });
-    setJoystickActive(true);
-    setPosition({ x: 0, y: 0 });
-  };
 
-  const handlePointerMove = (e: React.PointerEvent) => {
-    e.preventDefault(); // iOS 修复
-    e.stopPropagation();
-    
-    if (!origin || e.pointerId !== pointerIdRef.current) return;
-
-    const dx = e.clientX - origin.x;
-    const dy = e.clientY - origin.y;
+    const dx = e.clientX - origin.current.x;
+    const dy = e.clientY - origin.current.y;
 
     const distance = Math.sqrt(dx * dx + dy * dy);
     const angle = Math.atan2(dy, dx);
@@ -45,52 +36,82 @@ export const Joystick: React.FC<JoystickProps> = ({ onMove }) => {
     const x = Math.cos(angle) * clampedDistance;
     const y = Math.sin(angle) * clampedDistance;
 
-    setPosition({ x, y });
+    stickRef.current.style.transform = `translate(${x}px, ${y}px)`;
 
-    // Normalize output between -1 and 1
-    onMove(x / MAX_RADIUS, y / MAX_RADIUS);
-  };
+    // 标准化输出
+    onMoveRef.current(x / MAX_RADIUS, y / MAX_RADIUS);
+  }, []);
 
-  const handlePointerUp = (e: React.PointerEvent) => {
-    e.preventDefault(); // iOS 修复
+  const handleGlobalPointerUp = useCallback((e: PointerEvent) => {
+    if (e.pointerId !== pointerIdRef.current) return;
+
+    e.preventDefault();
+
+    // 清理全局监听器
+    window.removeEventListener('pointermove', handleGlobalPointerMove);
+    window.removeEventListener('pointerup', handleGlobalPointerUp);
+    window.removeEventListener('pointercancel', handleGlobalPointerUp);
+
+    // 重置状态
+    setJoystickActive(false);
+    if (stickRef.current) {
+        stickRef.current.style.transition = 'transform 0.1s ease-out';
+        stickRef.current.style.transform = 'translate(0px, 0px)';
+    }
+    onMoveRef.current(0, 0);
+    
+    // 清空引用
+    origin.current = null;
+    pointerIdRef.current = null;
+  }, [setJoystickActive, handleGlobalPointerMove]);
+
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    // 阻止默认行为和事件冒泡，这是在 iOS 上成功的关键第一步
+    e.preventDefault();
     e.stopPropagation();
     
-    if (e.pointerId === pointerIdRef.current) {
-      // 尝试释放捕获
-      try {
-        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-          e.currentTarget.releasePointerCapture(e.pointerId);
-        }
-      } catch (err) {
-        // 忽略可能的错误
-      }
+    // 记录触摸点 ID 和起始位置
+    pointerIdRef.current = e.pointerId;
+    origin.current = { x: e.clientX, y: e.clientY };
 
-      setOrigin(null);
-      setJoystickActive(false);
-      setPosition({ x: 0, y: 0 });
-      onMove(0, 0);
-      pointerIdRef.current = null;
+    setJoystickActive(true);
+
+    if (stickRef.current) {
+      stickRef.current.style.transition = 'none'; // 拖动时移除动画
     }
+
+    // 挂载全局监听器
+    window.addEventListener('pointermove', handleGlobalPointerMove, { passive: false });
+    window.addEventListener('pointerup', handleGlobalPointerUp, { passive: false });
+    window.addEventListener('pointercancel', handleGlobalPointerUp, { passive: false });
   };
+
+  // 组件卸载时确保清理全局监听器
+  useEffect(() => {
+    return () => {
+      window.removeEventListener('pointermove', handleGlobalPointerMove);
+      window.removeEventListener('pointerup', handleGlobalPointerUp);
+      window.removeEventListener('pointercancel', handleGlobalPointerUp);
+    };
+  }, [handleGlobalPointerMove, handleGlobalPointerUp]);
 
   return (
     <div 
-      className="absolute bottom-10 left-10 z-50 w-40 h-40 flex items-center justify-center touch-none select-none"
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      onPointerLeave={handlePointerUp}
+      className="absolute bottom-10 left-10 z-50 w-40 h-40 flex items-center justify-center"
+      // iOS 修复: touchAction: 'none' 是最高优先级指令，禁止浏览器处理滚动等手势
+      style={{ touchAction: 'none' }} 
     >
       {/* Base */}
-      <div className="w-32 h-32 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center transition-opacity duration-300">
+      <div 
+        ref={baseRef}
+        className="w-32 h-32 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center"
+        onPointerDown={handlePointerDown}
+      >
         {/* Stick */}
         <div 
           ref={stickRef}
-          className="w-12 h-12 rounded-full bg-white/80 shadow-lg transform transition-transform duration-75 ease-linear"
-          style={{
-            transform: `translate(${position.x}px, ${position.y}px)`
-          }}
+          className="w-12 h-12 rounded-full bg-white/80 shadow-lg pointer-events-none"
         />
       </div>
     </div>

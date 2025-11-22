@@ -16,9 +16,11 @@ export interface GameState {
   focusedPhotoId: string | null;
   isJoystickActive: boolean;
   selectedCharacter: CharacterId;
+  isCameraReverse: boolean; // 新增：是否反转视角控制
   setFocusedPhotoId: (id: string | null) => void;
   setJoystickActive: (active: boolean) => void;
   setSelectedCharacter: (id: CharacterId) => void;
+  toggleCameraReverse: () => void; // 新增：切换视角控制模式
 }
 
 export interface JoystickOutput {

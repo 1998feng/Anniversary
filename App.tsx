@@ -1,3 +1,4 @@
+
 import React, { Suspense, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
@@ -13,7 +14,7 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { CharacterSelector } from './components/CharacterSelector';
 import { JoystickOutput } from './types';
 import { useGameStore } from './store';
-import { Eye, User, Shirt } from 'lucide-react';
+import { Eye, User, Shirt, ArrowLeftRight } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as THREE from 'three';
 
@@ -82,6 +83,9 @@ const App: React.FC = () => {
   const focusedPhotoId = useGameStore(state => state.focusedPhotoId);
   const isJoystickActive = useGameStore(state => state.isJoystickActive);
   
+  const isCameraReverse = useGameStore(state => state.isCameraReverse);
+  const toggleCameraReverse = useGameStore(state => state.toggleCameraReverse);
+
   const [viewMode, setViewMode] = useState<'first' | 'third'>('third');
   const [hasEntered, setHasEntered] = useState(false);
   const [isCharSelectorOpen, setIsCharSelectorOpen] = useState(false);
@@ -96,6 +100,7 @@ const App: React.FC = () => {
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (!hasEntered) return;
+    // 关键改动：当摇杆处于激活状态时，主屏幕不应该再处理视角拖拽
     if (!isJoystickActive && !focusedPhotoId && !isCharSelectorOpen) {
         prevPointer.current = { x: e.clientX, y: e.clientY };
         isDraggingRef.current = true;
@@ -110,7 +115,13 @@ const App: React.FC = () => {
       
       prevPointer.current = { x: e.clientX, y: e.clientY };
 
-      cameraRotation.current.yaw -= dx * 0.004;
+      // 视角控制逻辑：
+      // 原逻辑: yaw -= dx * k (右滑减少yaw，相机右转)
+      // 反转逻辑 (新默认): yaw += dx * k (右滑增加yaw，相机左转)
+      // isCameraReverse 为 true 时使用反转逻辑
+      const direction = isCameraReverse ? 1 : -1;
+      
+      cameraRotation.current.yaw += dx * 0.004 * direction;
       cameraRotation.current.pitch -= dy * 0.004;
 
       const MAX_PITCH = Math.PI / 2 - 0.1;
@@ -128,6 +139,7 @@ const App: React.FC = () => {
   return (
     <div 
         className="w-full h-full relative bg-[#e6e6e6]"
+        style={{ touchAction: 'none' }} // iOS 修复：强制禁止默认触摸行为
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -198,6 +210,18 @@ const App: React.FC = () => {
                       title="切换视角"
                   >
                       {viewMode === 'third' ? <Eye className="w-6 h-6 text-gray-700" /> : <User className="w-6 h-6 text-gray-700" />}
+                  </button>
+
+                   {/* 反转视角控制按钮 */}
+                   <button 
+                      onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCameraReverse();
+                      }}
+                      className={`bg-white/40 backdrop-blur-md border border-white/50 p-3 rounded-full shadow-lg hover:bg-white transition-all active:scale-95 ${!isCameraReverse ? 'text-gray-700' : 'text-blue-600'}`}
+                      title={isCameraReverse ? "当前：拖拽场景" : "当前：旋转相机"}
+                  >
+                      <ArrowLeftRight className="w-6 h-6" />
                   </button>
 
                   {/* 换装按钮 */}

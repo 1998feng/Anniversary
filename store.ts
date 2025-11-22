@@ -6,9 +6,11 @@ export const useGameStore = create<GameState>((set) => ({
   focusedPhotoId: null,
   isJoystickActive: false,
   selectedCharacter: 'steve', // 默认必须是 steve
+  isCameraReverse: true, // 默认开启反转（向右滑->视角向左），符合新的需求
   setFocusedPhotoId: (id) => set({ focusedPhotoId: id }),
   setJoystickActive: (active) => set({ isJoystickActive: active }),
   setSelectedCharacter: (id) => set({ selectedCharacter: id }),
+  toggleCameraReverse: () => set((state) => ({ isCameraReverse: !state.isCameraReverse })),
 }));
 
 // 地图配置 - 圆形大厅
