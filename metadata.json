@@ -1,0 +1,5 @@
+{
+  "name": "Love Gallery 3D",
+  "description": "A 3D interactive exhibition of memories using React, Three.js, and Gemini AI.",
+  "requestFramePermissions": []
+}
