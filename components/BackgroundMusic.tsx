@@ -6,14 +6,15 @@ export const BackgroundMusic: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // TODO: Add your background music URL here (mp3/ogg)
-  // Example: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
-  const MUSIC_URL = ""; 
+  // --- 在此处替换为你的背景音乐链接 (mp3/ogg) ---
+  // 如果没有链接，组件将不会尝试自动播放
+  // 建议使用外链或项目内的音频文件
+  const MUSIC_URL = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"; 
 
   useEffect(() => {
-    // Only attempt to play if a URL is provided
+    // 只有当提供了 URL 时才尝试播放
     if (audioRef.current && MUSIC_URL) {
-      audioRef.current.volume = 0.3; // Set gentle volume
+      audioRef.current.volume = 0.3; // 设置柔和的音量 (0.0 - 1.0)
       const playPromise = audioRef.current.play();
       
       if (playPromise !== undefined) {
@@ -22,8 +23,9 @@ export const BackgroundMusic: React.FC = () => {
             setIsPlaying(true);
           })
           .catch((error) => {
-            // Auto-play was prevented by browser policy (interaction required)
-            console.log("Autoplay prevented. User must click to play.");
+            // 现代浏览器策略通常会阻止自动播放，除非用户先与页面交互（如点击）
+            // 这是正常现象，用户可以点击右上角的音乐图标手动播放
+            console.log("自动播放被阻止，等待用户点击播放。", error);
             setIsPlaying(false);
           });
       }
@@ -34,7 +36,7 @@ export const BackgroundMusic: React.FC = () => {
     e.stopPropagation();
     
     if (!MUSIC_URL) {
-      console.warn("No music URL provided in components/BackgroundMusic.tsx");
+      console.warn("未在 components/BackgroundMusic.tsx 中设置音乐链接");
       return;
     }
 
@@ -42,7 +44,7 @@ export const BackgroundMusic: React.FC = () => {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play().catch(e => console.error("Playback failed", e));
+        audioRef.current.play().catch(e => console.error("播放失败", e));
       }
       setIsPlaying(!isPlaying);
     }

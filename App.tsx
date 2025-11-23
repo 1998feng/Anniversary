@@ -14,7 +14,7 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { CharacterSelector } from './components/CharacterSelector';
 import { JoystickOutput } from './types';
 import { useGameStore } from './store';
-import { Eye, User, Shirt, ArrowLeftRight } from 'lucide-react';
+import { Eye, User, Shirt, ArrowLeftRight, ArrowLeft } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as THREE from 'three';
 
@@ -27,10 +27,10 @@ const Scene: React.FC<{
 }> = ({ joystickRef, cameraRotationRef, viewMode, isDraggingRef, jumpRef }) => {
   return (
     <>
-      {/* Performance Optimized Light Grey Theme - Fog removed for clarity */}
+      {/* 性能优化：浅灰色背景 */}
       <color attach="background" args={['#e6e6e6']} />
 
-      {/* Lighting: Simplified for Performance */}
+      {/* 灯光配置 */}
       <ambientLight intensity={0.9} color="#ffffff" /> 
       
       <directionalLight 
@@ -45,8 +45,7 @@ const Scene: React.FC<{
       </directionalLight>
 
       {/* 
-         设置 timeStep="vary" 是解决移动端（如 120Hz 屏幕）角色抖动的关键。
-         这会让物理引擎根据实际帧率步进，而不是强制 60Hz。
+         设置 timeStep="vary" 解决移动端高刷屏角色抖动问题
       */}
       <Physics gravity={[0, -9.81, 0]} timeStep="vary">
         <Player 
@@ -59,9 +58,7 @@ const Scene: React.FC<{
         <Gallery />
       </Physics>
       
-      {/* 
-         使用本地生成的白色球体作为环境贴图，提供反射源，无需下载外部 HDR 文件。
-      */}
+      {/* 环境贴图 */}
       <Environment resolution={256}>
         <mesh scale={100}>
             <sphereGeometry args={[1, 64, 64]} />
@@ -115,10 +112,7 @@ const App: React.FC = () => {
       
       prevPointer.current = { x: e.clientX, y: e.clientY };
 
-      // 视角控制逻辑：
-      // 原逻辑: yaw -= dx * k (右滑减少yaw，相机右转)
-      // 反转逻辑 (新默认): yaw += dx * k (右滑增加yaw，相机左转)
-      // isCameraReverse 为 true 时使用反转逻辑
+      // 视角控制逻辑
       const direction = isCameraReverse ? 1 : -1;
       
       cameraRotation.current.yaw += dx * 0.004 * direction;
@@ -179,7 +173,22 @@ const App: React.FC = () => {
                 </Suspense>
             </Canvas>
 
-            {/* UI Layer */}
+            {/* UI 层 */}
+            
+            {/* 左上角返回按钮 */}
+            {!focusedPhotoId && !isCharSelectorOpen && (
+              <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setHasEntered(false);
+                }}
+                className="absolute top-6 left-6 z-20 p-3 bg-white/40 backdrop-blur-md border border-white/50 rounded-full shadow-lg hover:bg-white transition-all active:scale-95 group"
+                title="返回首页"
+              >
+                <ArrowLeft className="w-6 h-6 text-gray-700 group-hover:text-black" />
+              </button>
+            )}
+
             {!focusedPhotoId && !isCharSelectorOpen && (
                 <>
                     <Joystick onMove={handleJoystickMove} />
@@ -187,57 +196,61 @@ const App: React.FC = () => {
                 </>
             )}
 
+            {/* 标题区域 - 仅在正常浏览时显示 */}
             {!focusedPhotoId && !isCharSelectorOpen && (
-                <>
-                {/* 标题区域 */}
                 <div className="absolute top-8 left-0 right-0 text-center pointer-events-none select-none z-10 px-4">
-                    <h1 className="text-gray-800 text-2xl md:text-3xl font-serif font-bold tracking-widest drop-shadow-sm">恋爱一周年</h1>
+                    <h1 className="text-gray-800 text-2xl md:text-3xl font-serif font-bold tracking-widest drop-shadow-sm">我们的一周年</h1>
                     <p className="text-gray-500 text-xs md:text-sm mt-2 font-medium tracking-widest uppercase">我们的纪念画廊</p>
                 </div>
+            )}
 
-                {/* 右上角控制按钮组 - 垂直排列 */}
-                <div className="absolute top-6 right-6 z-20 flex flex-col gap-4 items-center">
+            {/* 右上角控制按钮组 - 容器始终渲染，确保 BackgroundMusic 不会被卸载 */}
+            <div className="absolute top-6 right-6 z-20 flex flex-col gap-4 items-center">
                   
+                  {/* 背景音乐组件 - 始终存在，查看照片时也会继续播放 */}
                   <BackgroundMusic />
 
-                  {/* 视角切换按钮 */}
-                  <button 
-                      onClick={(e) => {
-                      e.stopPropagation();
-                      setViewMode(prev => prev === 'third' ? 'first' : 'third');
-                      }}
-                      className="bg-white/40 backdrop-blur-md border border-white/50 p-3 rounded-full shadow-lg hover:bg-white transition-all active:scale-95"
-                      title="切换视角"
-                  >
-                      {viewMode === 'third' ? <Eye className="w-6 h-6 text-gray-700" /> : <User className="w-6 h-6 text-gray-700" />}
-                  </button>
+                  {/* 其他控制按钮 - 仅在正常浏览时显示 */}
+                  {!focusedPhotoId && !isCharSelectorOpen && (
+                    <>
+                      {/* 视角切换按钮 */}
+                      <button 
+                          onClick={(e) => {
+                          e.stopPropagation();
+                          setViewMode(prev => prev === 'third' ? 'first' : 'third');
+                          }}
+                          className="bg-white/40 backdrop-blur-md border border-white/50 p-3 rounded-full shadow-lg hover:bg-white transition-all active:scale-95"
+                          title="切换视角"
+                      >
+                          {viewMode === 'third' ? <Eye className="w-6 h-6 text-gray-700" /> : <User className="w-6 h-6 text-gray-700" />}
+                      </button>
 
-                   {/* 反转视角控制按钮 */}
-                   <button 
-                      onClick={(e) => {
-                      e.stopPropagation();
-                      toggleCameraReverse();
-                      }}
-                      className={`bg-white/40 backdrop-blur-md border border-white/50 p-3 rounded-full shadow-lg hover:bg-white transition-all active:scale-95 ${!isCameraReverse ? 'text-gray-700' : 'text-blue-600'}`}
-                      title={isCameraReverse ? "当前：拖拽场景" : "当前：旋转相机"}
-                  >
-                      <ArrowLeftRight className="w-6 h-6" />
-                  </button>
+                      {/* 反转视角控制按钮 */}
+                      <button 
+                          onClick={(e) => {
+                          e.stopPropagation();
+                          toggleCameraReverse();
+                          }}
+                          className={`bg-white/40 backdrop-blur-md border border-white/50 p-3 rounded-full shadow-lg hover:bg-white transition-all active:scale-95 ${!isCameraReverse ? 'text-gray-700' : 'text-blue-600'}`}
+                          title={isCameraReverse ? "当前：拖拽场景" : "当前：旋转相机"}
+                      >
+                          <ArrowLeftRight className="w-6 h-6" />
+                      </button>
 
-                  {/* 换装按钮 */}
-                  <button 
-                      onClick={(e) => {
-                      e.stopPropagation();
-                      setIsCharSelectorOpen(true);
-                      }}
-                      className="bg-white/40 backdrop-blur-md border border-white/50 p-3 rounded-full shadow-lg hover:bg-white transition-all active:scale-95"
-                      title="更换角色"
-                  >
-                      <Shirt className="w-6 h-6 text-gray-700" />
-                  </button>
-                </div>
-                </>
-            )}
+                      {/* 换装按钮 */}
+                      <button 
+                          onClick={(e) => {
+                          e.stopPropagation();
+                          setIsCharSelectorOpen(true);
+                          }}
+                          className="bg-white/40 backdrop-blur-md border border-white/50 p-3 rounded-full shadow-lg hover:bg-white transition-all active:scale-95"
+                          title="更换角色"
+                      >
+                          <Shirt className="w-6 h-6 text-gray-700" />
+                      </button>
+                    </>
+                  )}
+            </div>
 
             <CharacterSelector 
               isOpen={isCharSelectorOpen} 

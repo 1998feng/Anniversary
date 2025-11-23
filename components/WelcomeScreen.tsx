@@ -36,9 +36,9 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnter }) => {
           transition={{ duration: 1.2, ease: "easeOut" }}
           className="text-5xl md:text-7xl font-serif font-medium mb-8 text-gray-900 leading-tight drop-shadow-none"
         >
-          恋爱 <br />
+          我们的 <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 via-gray-800 to-gray-600">
-            一周年纪念
+            一周年
           </span>
         </motion.h1>
 
@@ -53,7 +53,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnter }) => {
                      text-gray-800 font-light text-lg tracking-widest hover:border-gray-800 transition-all duration-500"
         >
           <div className="flex items-center gap-4">
-            <span>进入展厅</span>
+            <span>进入</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform duration-300" />
           </div>
         </motion.button>
